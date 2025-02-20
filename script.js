@@ -5,66 +5,79 @@
 // @description  Remove Twiter Ads from your timeline
 // @author       BrOrlandi
 // @match        https://twitter.com/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=twitter.com
+// @match        https://x.com/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=x.com
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function () {
   'use strict';
 
-    // Throttle function to limit execution frequency
-function throttle(callback, delay) {
+  // Throttle function to limit execution frequency
+  function throttle(callback, delay) {
     let lastCallTime = 0;
     return function (...args) {
-        const now = Date.now();
-        if (now - lastCallTime >= delay) {
-            callback(...args);
-            lastCallTime = now;
-        }
+      const now = Date.now();
+      if (now - lastCallTime >= delay) {
+        callback(...args);
+        lastCallTime = now;
+      }
     };
-}
+  }
 
-    const hideAds = () => {
+  const hideAds = () => {
+    const spanElements = document.querySelectorAll('span');
 
-        const spanElements = document.querySelectorAll('span');
+    // Iterate through each <span> element
+    spanElements.forEach((span) => {
+      if (span.textContent.includes('Promovido') || span.textContent === 'Ad') {
+        // Find the parent element with the specified attribute and value
+        const parentElement = span.closest(
+          '[data-testId="cellInnerDiv"]:not([data-removed="true"])'
+        );
 
-        // Iterate through each <span> element
-        spanElements.forEach((span) => {
-            if (span.textContent.includes('Promovido') || span.textContent === 'Ad') {
-                // Find the parent element with the specified attribute and value
-                const parentElement = span.closest('[data-testId="cellInnerDiv"]:not([data-removed="true"])');
+        // Check if the parent element exists
+        if (parentElement) {
+          // Modify the border style of the parent element
+          parentElement.style.height = '0px';
+          parentElement.style.overflow = 'hidden';
+          parentElement.setAttribute('data-removed', 'true');
 
-                // Check if the parent element exists
-                if (parentElement) {
-                    // Modify the border style of the parent element
-                    parentElement.style.height = '0px';
-                    parentElement.style.overflow = 'hidden';
-                    parentElement.setAttribute('data-removed', 'true')
+          console.log('Ad removed:');
+          console.log(parentElement.innerText);
+          return;
+        }
 
-                    console.log('Ad removed:')
-                    console.log(parentElement.innerText)
-                    return;
-                }
+        const parentTrendElement = span.closest(
+          '[data-testId="trend"]:not([data-removed="true"])'
+        );
 
-                const parentTrendElement = span.closest('[data-testId="trend"]:not([data-removed="true"])');
+        // Check if the parent element exists
+        if (parentTrendElement) {
+          // Modify the border style of the parent element
+          parentTrendElement.style.height = '0px';
+          parentTrendElement.style.overflow = 'hidden';
+          parentTrendElement.style.padding = '0px';
+          parentTrendElement.setAttribute('data-removed', 'true');
 
-                // Check if the parent element exists
-                if (parentTrendElement) {
-                    // Modify the border style of the parent element
-                    parentTrendElement.style.height = '0px';
-                    parentTrendElement.style.overflow = 'hidden';
-                    parentTrendElement.style.padding = '0px';
-                    parentTrendElement.setAttribute('data-removed', 'true')
+          console.log('Ad in Trend removed:');
+          console.log(parentTrendElement.innerText);
+          return;
+        }
+      }
+    });
+  };
 
-                    console.log('Ad in Trend removed:')
-                    console.log(parentTrendElement.innerText)
-                    return;
-                }
-            }
-        });
+  hideAds();
+  window.addEventListener('scroll', throttle(hideAds, 200));
+
+  // remove the first ads when load page.
+  const intervalId = setInterval(() => {
+    // check if already loaded articles and stop the interval
+    if (document.querySelectorAll('[data-testid="tweet"]').length > 0) {
+      console.log('clear interval');
+      clearInterval(intervalId);
+      hideAds();
     }
-
-    console.log('Avoiding ads');
-    hideAds();
-    window.addEventListener('scroll', throttle(hideAds, 200));
+  }, 500);
 })();
